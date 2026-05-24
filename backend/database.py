@@ -1,10 +1,12 @@
 from pymongo import MongoClient
 from pymongo.server_api import ServerApi
+from dotenv import load_dotenv
+import os
 
-uri = "mongodb+srv://qiyang1127:qiy12345@cluster0.hqjyw1m.mongodb.net/?appName=Cluster0"
+load_dotenv()
 
+uri=os.getenv("MONGO_URI")
 client = MongoClient(uri, server_api=ServerApi('1'))
-client.drop_database("electrical_usage")
 
 db = client["EnerSenseAI"]
 sensor_data = db["sensor_data"]

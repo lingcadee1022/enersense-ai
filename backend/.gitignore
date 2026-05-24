@@ -1,0 +1,5 @@
+.env
+*.pkl
+ai-model/models/
+__pycache__/
+*.pyc

@@ -2,16 +2,13 @@ from fastapi import FastAPI
 from models import electrical_data, users_data, ai_suggestion, sensor_reading
 from database import users, sensor_data,energy_log,ai_insights
 from bson import ObjectId
+import requests
 
 app = FastAPI()
 
-@app.get("/")
-def greet():
-    return "Hello"
-
 @app.post("/user")
 def create_user(user: users_data):
-    users.insert_one(user.dict())
+    users.insert_one(user.model_dump())
     return {"message": "User Created"}
 
 @app.get("/user")
@@ -38,97 +35,142 @@ def user_serializer(user):
 def receive_sensor(data: sensor_reading):
 
     data_dict = data.model_dump()
-    result = sensor_data.insert_one(data_dict)
 
-    return{
-        "stasus" : "success",
-        "message": "Data stored successfully",
-        "id": str(result.inserted_id)
+    sensor_data.insert_one(data_dict)
+
+    response = requests.post(
+        "http://localhost:8000/sensor-data",
+        json={
+            "timestamp": str(data.timestamp),
+            "power": data.power,
+            "voltage": data.voltage,
+            "current": data.current
+        }
+    )
+
+    if response.status_code != 200:
+        return {
+            "status": "error",
+            "message": "AI service failed",
+            "details": response.text
+        }
+    
+    ai_result = response.json()
+
+    final_data = {
+        **data_dict,
+        **ai_result
+    }
+
+    result=energy_log.insert_one(final_data)
+    final_data["_id"] = str(result.inserted_id)
+
+    return {
+        "status": "success",
+        "data": final_data
     }
 
 @app.get("/live-usage")
 def live_usage():
-    #latest = energy_log.find_one(sort=[("_id", -1)])
-    #if latest:
-    #    latest["_id"] = str(latest["_id"])
-    #    return latest
-    #return {
-     #   "message": "No data found"
-    #}
-    pass
+    latest = energy_log.find_one(
+        sort=[("_id", -1)]
+    )
 
-
-@app.post("/ai")
-def add_inssight(data: ai_suggestion):
-    #return{
-     #   "insight": "No data found"
-    #}
-
-    pass
-
-
-@app.get("/history/{appliance}")
-def history(appliance : str):
-
-    history_data=[]
-    data = energy_log.find({"appliance": appliance}).sort("_id", -1)
-
-    for i in data:
-        i["_id"] = str(i["_id"])
-        history_data.append({
-            "timestamp": i.get("timestamp"),
-            "power": i.get("power")
-        })
-
-    return history_data
-
-@app.get("/prediction")
-def ai_prediction():
-    data = list(energy_log.find())
-
-    if len(data) == 0:
+    if latest is None:
         return {
-            "message": "No data available"
+            "message": "No data found"
         }
 
-    total_power = 0
+    latest["_id"] = str(
+        latest["_id"]
+    )
 
-    appliance_power = {}
+    return latest
+
+
+
+@app.get("/history")
+def get_all_history():
+
+    data = energy_log.find().sort("timestamp", -1)
+
+    history = []
+
     for item in data:
-        power = item.get("estimated_power",0)
-        appliance = item.get("appliance","Unknown")
-        total_power += power
-        if appliance not in appliance_power:
-            appliance_power[appliance] = 0
-
-        appliance_power[appliance] += power
-
-    if appliance not in appliance_power:
-            appliance_power[appliance] = 0
-
-    appliance_power[appliance] += power
-
-    average_power = total_power / len(data)
-
-    estimated_daily_cost = round(
-        (average_power * 24) / 1000 * 0.218,
-        2
-    )
-
-    estimated_monthly_cost = round(
-        estimated_daily_cost * 30,
-        2
-    )
-
-    highest_appliance = max(
-        appliance_power,
-        key=appliance_power.get
-    )
+        history.append({
+            "timestamp": item.get("timestamp"),
+            "power": item.get("power"),
+            "voltage": item.get("voltage"),
+            "current": item.get("current"),
+            "appliance": item.get("predicted_appliance"),
+            "energy_score": item.get("energy_score"),
+            "is_anomaly": item.get("is_anomaly"),
+        })
 
     return {
-        "estimated_daily_cost": estimated_daily_cost,
-        "estimated_monthly_cost": estimated_monthly_cost,
-        "highest_consumption_appliance": highest_appliance
+        "count": len(history),
+        "data": history
     }
 
+@app.get("/history/{appliance}")
+def get_history_by_appliance(appliance: str):
 
+    data = energy_log.find({
+        "predicted_appliance": appliance
+    }).sort("_id", -1)
+
+    history = []
+
+    for item in data:
+        history.append({
+            "timestamp": item.get("timestamp"),
+            "power": item.get("power"),
+            "appliance": item.get("predicted_appliance"),
+            "energy_score": item.get("energy_score"),
+            "is_anomaly": item.get("is_anomaly"),
+        })
+
+    return {
+        "appliance": appliance,
+        "count": len(history),
+        "data": history
+    }
+
+@app.get("/forecast")
+def get_forecast():
+    response = requests.get("http://localhost:8000/forecast")
+
+    if response.status_code != 200:
+        return {
+            "message": "Forecast unavailable"
+        }
+
+    return response.json()
+
+@app.get("/insights")
+def get_insights():
+    response = requests.get("http://localhost:8000/insights")
+    if response.status_code != 200:
+        return {
+            "message": "Insights unavailable"
+        }
+    return response.json()
+
+@app.get("/prediction")
+def prediction():
+
+    response = requests.get("http://localhost:8000/appliances")
+
+    if response.status_code != 200:
+        return {
+            "message": "Prediction unavailable"
+        }
+
+    return response.json()
+
+@app.get("/health")
+def health():
+
+    response = requests.get("http://localhost:8000/health")
+
+    return response.json()

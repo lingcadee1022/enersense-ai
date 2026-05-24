@@ -3,7 +3,6 @@ from datetime import datetime
 from typing import Optional
 
 class sensor_reading(BaseModel):
-    device_id : str
     timestamp :datetime
     voltage: float
     current: float
