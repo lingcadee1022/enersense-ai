@@ -2,10 +2,13 @@ from fastapi import FastAPI
 from models import electrical_data, users_data, ai_suggestion, sensor_reading
 from database import users, sensor_data,energy_log,ai_insights
 from bson import ObjectId
+from fastapi.middleware.cors import CORSMiddleware
 import requests
 import os
 
 app = FastAPI()
+
+app.add_middleware( CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"], )
 
 @app.post("/user")
 def create_user(user: users_data):
