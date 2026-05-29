@@ -3,6 +3,7 @@ from models import electrical_data, users_data, ai_suggestion, sensor_reading
 from database import users, sensor_data,energy_log,ai_insights
 from bson import ObjectId
 import requests
+import os
 
 app = FastAPI()
 
@@ -39,7 +40,7 @@ def receive_sensor(data: sensor_reading):
     sensor_data.insert_one(data_dict)
 
     response = requests.post(
-        "http://localhost:8000/sensor-data",
+        "https://enersense-ai.onrender.com/sensor-data",
         json={
             "timestamp": str(data.timestamp),
             "power": data.power,
@@ -138,7 +139,7 @@ def get_history_by_appliance(appliance: str):
 
 @app.get("/forecast")
 def get_forecast():
-    response = requests.get("http://localhost:8000/forecast")
+    response = requests.get("https://enersense-ai.onrender.com/forecast")
 
     if response.status_code != 200:
         return {
@@ -149,7 +150,7 @@ def get_forecast():
 
 @app.get("/insights")
 def get_insights():
-    response = requests.get("http://localhost:8000/insights")
+    response = requests.get("https://enersense-ai.onrender.com/insights")
     if response.status_code != 200:
         return {
             "message": "Insights unavailable"
@@ -159,7 +160,7 @@ def get_insights():
 @app.get("/prediction")
 def prediction():
 
-    response = requests.get("http://localhost:8000/appliances")
+    response = requests.get("https://enersense-ai.onrender.com/appliances")
 
     if response.status_code != 200:
         return {
@@ -171,6 +172,6 @@ def prediction():
 @app.get("/health")
 def health():
 
-    response = requests.get("http://localhost:8000/health")
+    response = requests.get("https://enersense-ai.onrender.com/health")
 
     return response.json()
