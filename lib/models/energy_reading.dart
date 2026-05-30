@@ -2,14 +2,14 @@ import 'package:intl/intl.dart';
 
 class EnergyReading {
   final DateTime timestamp;
-  final double power; // in Watts
-  final double voltage; // in Volts
-  final double current; // in Amperes
+  final double power;
+  final double voltage;
+  final double current;
   final String predictedAppliance;
-  final int energyScore; // 0-100
+  final int energyScore;
   final bool isAnomaly;
   final String? anomalyInsight;
-  final double estimatedBill; // in RM
+  final double estimatedBill;
 
   EnergyReading({
     required this.timestamp,
@@ -23,37 +23,45 @@ class EnergyReading {
     required this.estimatedBill,
   });
 
-  // Convert power in Watts to kWh
   double get powerInKwh => power / 1000;
 
-  // Cost calculation (RM 0.45 per kWh)
   double get costToday {
-    // Assuming this is hourly average, multiply by rate
     return powerInKwh * 0.45;
   }
 
-  // Carbon footprint estimate (kg CO2 per hour, ~0.95 kg CO2 per kWh in Malaysia)
   double get carbonEmission => powerInKwh * 0.95;
 
-  // Difference from yesterday (for demo, 14% less)
   double get differencePercentage => -14.0;
 
-  // Parse from API JSON response
   factory EnergyReading.fromJson(Map<String, dynamic> json) {
+    DateTime parsedTimestamp;
+
+    try {
+      final rawTimestamp = json['timestamp']?.toString() ?? "";
+      final fixedTimestamp = rawTimestamp.replaceFirst(" ", "T");
+      parsedTimestamp = DateTime.parse(fixedTimestamp);
+    } catch (e) {
+      parsedTimestamp = DateTime.now();
+    }
+
+    final powerValue = (json['power'] as num?)?.toDouble() ?? 0.0;
+
     return EnergyReading(
-      timestamp: DateTime.parse(json['timestamp'] as String),
-      power: (json['power'] as num).toDouble(),
-      voltage: (json['voltage'] as num).toDouble(),
-      current: (json['current'] as num).toDouble(),
-      predictedAppliance: json['predicted_appliance'] as String,
-      energyScore: json['energy_score'] as int,
-      isAnomaly: json['is_anomaly'] as bool,
-      anomalyInsight: json['anomaly_insight'] as String?,
-      estimatedBill: (json['estimated_bill'] as num?)?.toDouble() ?? 218.40,
+      timestamp: parsedTimestamp,
+      power: powerValue,
+      voltage: (json['voltage'] as num?)?.toDouble() ?? 0.0,
+      current: (json['current'] as num?)?.toDouble() ?? 0.0,
+      predictedAppliance:
+          json['predicted_appliance']?.toString() ?? "Unknown",
+      energyScore: (json['energy_score'] as num?)?.toInt() ?? 0,
+      isAnomaly: json['is_anomaly'] as bool? ?? false,
+      anomalyInsight: json['anomaly_insight']?.toString(),
+      estimatedBill:
+          (json['estimated_bill'] as num?)?.toDouble() ??
+          ((powerValue / 1000) * 0.45 * 24 * 30),
     );
   }
 
-  // Convert to JSON for API calls
   Map<String, dynamic> toJson() {
     return {
       'timestamp': timestamp.toIso8601String(),
@@ -68,9 +76,7 @@ class EnergyReading {
     };
   }
 
-  // Format methods for UI display
-  String get formattedTimestamp =>
-      DateFormat('hh:mm a').format(timestamp);
+  String get formattedTimestamp => DateFormat('hh:mm a').format(timestamp);
 
   String get formattedPower {
     if (powerInKwh >= 1) {

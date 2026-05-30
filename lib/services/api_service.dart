@@ -11,7 +11,7 @@ class ApiService {
   final http.Client httpClient;
 
   ApiService({String? baseUrl, http.Client? client})
-      : baseUrl = baseUrl ?? 'http://localhost:8000',
+      : baseUrl = baseUrl ?? 'https://enersense-backend.onrender.com',
         httpClient = client ?? http.Client();
 
   // Set base URL dynamically (for settings screen)
