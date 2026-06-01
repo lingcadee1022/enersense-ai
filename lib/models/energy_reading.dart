@@ -43,11 +43,11 @@ class EnergyReading {
     return EnergyReading(
       timestamp: DateTime.parse(json['timestamp'] as String),
       power: (json['power'] as num).toDouble(),
-      voltage: (json['voltage'] as num).toDouble(),
+      voltage: (json['voltage'] as num? ?? 240.0).toDouble(),
       current: (json['current'] as num).toDouble(),
-      predictedAppliance: json['predicted_appliance'] as String,
-      energyScore: json['energy_score'] as int,
-      isAnomaly: json['is_anomaly'] as bool,
+      predictedAppliance: json['predicted_appliance'] as String? ?? 'Unknown',
+      energyScore: json['energy_score'] as int? ?? 75,
+      isAnomaly: json['is_anomaly'] as bool? ?? false,
       anomalyInsight: json['anomaly_insight'] as String?,
       estimatedBill: (json['estimated_bill'] as num?)?.toDouble() ?? 218.40,
     );

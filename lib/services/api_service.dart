@@ -36,7 +36,7 @@ class ApiService {
   Future<EnergyReading> getLiveUsage() async {
     try {
       final response = await httpClient
-          .get(Uri.parse('$baseUrl/live-usage'))
+          .get(Uri.parse('$baseUrl/api/v1/live-usage'))
           .timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
@@ -77,7 +77,7 @@ class ApiService {
   Future<Map<String, dynamic>> getInsights() async {
     try {
       final response = await httpClient
-          .get(Uri.parse('$baseUrl/insights'))
+          .get(Uri.parse('$baseUrl/api/v1/insights'))
           .timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
