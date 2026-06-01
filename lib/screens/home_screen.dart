@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:enersense/providers/energy_provider.dart';
 import 'package:enersense/theme.dart';
 import 'package:enersense/widgets/chart_helpers.dart';
+import 'package:enersense/widgets/anomaly_alert_dialog.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -13,18 +14,38 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
+  late bool _showAnomalyAlert;
 
   @override
   void initState() {
     super.initState();
+    _showAnomalyAlert = true; // Demo mode: always show by default
+    WidgetsBinding.instance.addObserver(this);
     _initializeAnimations();
     Future.microtask(() {
       context.read<EnergyProvider>().fetchLiveUsage();
     });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // Reset alert to show again when app comes to foreground
+      setState(() {
+        _showAnomalyAlert = true;
+      });
+    }
   }
 
   void _initializeAnimations() {
@@ -46,20 +67,42 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   @override
-  void dispose() {
-    _animationController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: _buildGlassAppBar(),
       body: _buildGradientBackground(
-        child: Consumer<EnergyProvider>(
-          builder: (context, energyProvider, child) =>
-              _buildContent(context, energyProvider),
+        child: Stack(
+          children: [
+            Consumer<EnergyProvider>(
+              builder: (context, energyProvider, child) =>
+                  _buildContent(context, energyProvider),
+            ),
+            // Anomaly Alert Dialog Overlay
+            Consumer<EnergyProvider>(
+              builder: (context, energyProvider, child) {
+                final reading = energyProvider.currentReading;
+                // Show alert whenever there's an anomaly and it hasn't been dismissed
+                final showAlert = _showAnomalyAlert &&
+                    reading != null &&
+                    reading.isAnomaly;
+
+                return AnomalyAlertDialog(
+                  isVisible: showAlert,
+                  onResolve: () {
+                    setState(() {
+                      _showAnomalyAlert = false;
+                    });
+                  },
+                  onIgnore: () {
+                    setState(() {
+                      _showAnomalyAlert = false;
+                    });
+                  },
+                );
+              },
+            ),
+          ],
         ),
       ),
     );
@@ -95,14 +138,14 @@ class _HomeScreenState extends State<HomeScreen>
                         Text(
                           'EnersenseAI',
                           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                            color: Colors.white,
+                            color: Colors.black,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
                         Text(
                           'Energy Insights',
                           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Colors.white.withValues(alpha: 179),
+                            color: Colors.black26.withValues(alpha: 179),
                           ),
                         ),
                       ],
@@ -179,6 +222,20 @@ class _HomeScreenState extends State<HomeScreen>
                   _buildAnomalyAlert(reading),
                   const SizedBox(height: 24),
                 ],
+                // Attribution text
+                Padding(
+                  padding: const EdgeInsets.only(top: 16),
+                  child: Center(
+                    child: Text(
+                      'by xm.um.com',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppTheme.textGrey.withValues(alpha: 128),
+                        fontWeight: FontWeight.w400,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ),
+                ),
               ],
             ),
           ),

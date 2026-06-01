@@ -384,6 +384,55 @@ class MongoDBClient:
         logger.info(f"Retrieved {len(alerts)} alerts for {device_id}")
         return alerts
 
+    # ==================== HOUSEHOLD PROFILE ====================
+
+    def insert_household_profile(self, profile_doc: Dict[str, Any]) -> str:
+        """
+        Insert a new household profile.
+        
+        Args:
+            profile_doc: Household profile document with user_id and profile data
+            
+        Returns:
+            Document ID of inserted profile
+        """
+        db = self.get_db()
+        result = db.household_profiles.insert_one(profile_doc)
+        logger.info(f"Inserted household profile for {profile_doc.get('user_id')}")
+        return str(result.inserted_id)
+
+    def get_household_profile(self, user_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Get household profile for a user.
+        
+        Args:
+            user_id: User identifier
+            
+        Returns:
+            Household profile document or None if not found
+        """
+        db = self.get_db()
+        profile = db.household_profiles.find_one({"user_id": user_id})
+        return profile
+
+    def update_household_profile(
+        self, user_id: str, profile_data: Dict[str, Any]
+    ) -> None:
+        """
+        Update existing household profile.
+        
+        Args:
+            user_id: User identifier
+            profile_data: Updated profile data
+        """
+        db = self.get_db()
+        db.household_profiles.update_one(
+            {"user_id": user_id},
+            {"$set": profile_data},
+            upsert=True,
+        )
+        logger.info(f"Updated household profile for {user_id}")
+
     # ==================== COLLECTION MANAGEMENT ====================
 
     def create_indexes(self) -> None:
@@ -410,6 +459,9 @@ class MongoDBClient:
         db.alerts.create_index([("device_id", 1), ("timestamp", -1)])
         db.alerts.create_index([("device_id", 1), ("level", 1), ("timestamp", -1)])
 
+        # Household profiles index
+        db.household_profiles.create_index("user_id", unique=True)
+
         logger.info("✓ Database indexes created")
 
     def get_all_collections(self) -> List[str]:
@@ -433,6 +485,7 @@ class MongoDBClient:
             user_profiles_count = db.user_profiles.count_documents({})
             ai_insights_count = db.ai_insights.count_documents({})
             alerts_count = db.alerts.count_documents({})
+            household_profiles_count = db.household_profiles.count_documents({})
             
             return {
                 "status": "healthy",
@@ -442,6 +495,7 @@ class MongoDBClient:
                 "user_profiles_count": user_profiles_count,
                 "ai_insights_count": ai_insights_count,
                 "alerts_count": alerts_count,
+                "household_profiles_count": household_profiles_count,
             }
         except Exception as e:
             logger.error(f"Health check failed: {str(e)}")

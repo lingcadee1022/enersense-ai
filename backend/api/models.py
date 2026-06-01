@@ -199,6 +199,62 @@ class ErrorResponse(BaseModel):
     detail: Optional[str] = None
 
 
+# ==================== HOUSEHOLD PROFILE ====================
+
+class HouseholdProfileRequest(BaseModel):
+    """Request model for household profile."""
+    
+    household_size: str = Field(..., description="Household size category")
+    home_type: str = Field(..., description="Type of home")
+    appliances: List[str] = Field(..., description="List of main appliances in the household")
+    occupancy: str = Field(..., description="Typical occupancy period")
+    monthly_budget: float = Field(..., description="Monthly electricity budget in RM", ge=0)
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "household_size": "4-5 People",
+                "home_type": "Terrace House",
+                "appliances": [
+                    "Air Conditioner",
+                    "Refrigerator",
+                    "Television"
+                ],
+                "occupancy": "Evening",
+                "monthly_budget": 200.0
+            }
+        }
+
+
+class HouseholdProfileResponse(BaseModel):
+    """Response model for household profile."""
+    
+    household_size: str
+    home_type: str
+    appliances: List[str]
+    occupancy: str
+    monthly_budget: float
+    created_at: Optional[str] = None
+    updated_at: Optional[str] = None
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "household_size": "4-5 People",
+                "home_type": "Terrace House",
+                "appliances": [
+                    "Air Conditioner",
+                    "Refrigerator",
+                    "Television"
+                ],
+                "occupancy": "Evening",
+                "monthly_budget": 200.0,
+                "created_at": "2026-06-01T10:30:00Z",
+                "updated_at": "2026-06-01T10:30:00Z"
+            }
+        }
+
+
 # ==================== ALERTS ====================
 
 class AlertResponse(BaseModel):

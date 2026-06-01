@@ -7,6 +7,7 @@ import 'package:enersense/providers/chat_provider.dart';
 import 'package:enersense/providers/insights_provider.dart';
 import 'package:enersense/providers/savings_provider.dart';
 import 'package:enersense/providers/profile_provider.dart';
+import 'package:enersense/providers/household_profile_provider.dart';
 import 'package:enersense/screens/home_screen.dart';
 import 'package:enersense/screens/chat_screen.dart';
 import 'package:enersense/screens/insights_screen.dart';
@@ -65,6 +66,14 @@ class MyApp extends StatelessWidget {
           // Profile Provider
           ChangeNotifierProvider<ProfileProvider>(
             create: (_) => ProfileProvider(),
+          ),
+          // Household Profile Provider
+          ChangeNotifierProxyProvider<ApiService, HouseholdProfileProvider>(
+            create: (context) => HouseholdProfileProvider(
+              apiService: context.read<ApiService>(),
+            ),
+            update: (context, apiService, previous) =>
+                previous ?? HouseholdProfileProvider(apiService: apiService),
           ),
         ],
         child: const MainApp(),

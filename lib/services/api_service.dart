@@ -5,6 +5,7 @@ import 'package:enersense/models/recommendation.dart';
 import 'package:enersense/models/appliance_usage.dart';
 import 'package:enersense/models/behavior_pattern.dart';
 import 'package:enersense/models/chat_message.dart';
+import 'package:enersense/models/household_profile.dart';
 
 class ApiService {
   late String baseUrl;
@@ -165,6 +166,52 @@ class ApiService {
   }
 
   // ===== Mock Data Generators (for development/offline) =====
+
+  // Get household profile
+  Future<HouseholdProfile> getHouseholdProfile() async {
+    try {
+      final response = await httpClient
+          .get(Uri.parse('$baseUrl/api/v1/profile'))
+          .timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        return HouseholdProfile.fromJson(jsonDecode(response.body));
+      } else {
+        throw Exception('Failed to load household profile');
+      }
+    } catch (e) {
+      print('Error fetching household profile: $e');
+      // Return default profile for demo/offline
+      return HouseholdProfile.createDefault();
+    }
+  }
+
+  // Save household profile
+  Future<bool> saveHouseholdProfile(HouseholdProfile profile) async {
+    try {
+      final payload = jsonEncode(profile.toJson());
+
+      final response = await httpClient
+          .post(
+            Uri.parse('$baseUrl/api/v1/profile'),
+            headers: {'Content-Type': 'application/json'},
+            body: payload,
+          )
+          .timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data['success'] ?? false;
+      } else {
+        throw Exception('Failed to save household profile');
+      }
+    } catch (e) {
+      print('Error saving household profile: $e');
+      return false;
+    }
+  }
+
+  // ===== Mock Data Generators (for development/offline) ======
 
   EnergyReading _getMockEnergyReading() {
     return EnergyReading(

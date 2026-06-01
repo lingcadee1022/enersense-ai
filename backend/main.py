@@ -17,7 +17,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 # Import routers
-from api import sensor, live_usage, history, insights, alerts
+from api import sensor, live_usage, history, insights, alerts, profile
 from db.mongo import db_client
 
 # Configure logging
@@ -102,6 +102,7 @@ app.include_router(live_usage.router)
 app.include_router(history.router)
 app.include_router(insights.router)
 app.include_router(alerts.router)
+app.include_router(profile.router)
 
 logger.info("✓ API routers registered")
 

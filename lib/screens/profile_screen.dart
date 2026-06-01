@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:enersense/providers/profile_provider.dart';
 import 'package:enersense/theme.dart';
+import 'package:enersense/widgets/household_profile_section.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -26,6 +27,9 @@ class ProfileScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Household Profile Card at the TOP
+                  HouseholdProfileCard(),
+                  SizedBox(height: 28),
                   _buildSectionHeader('AI personalization', ''),
                   SizedBox(height: 16),
                   _buildComfortCard(context, profile),
@@ -42,6 +46,7 @@ class ProfileScreen extends StatelessWidget {
                   SizedBox(height: 16),
                   _buildAchievementBadges(profile),
                   SizedBox(height: 28),
+
                   _buildAlertsCard(context),
                   SizedBox(height: 28),
                   _buildConnectedAppliancesCard(context),
