@@ -38,18 +38,25 @@ class EnergyReading {
   // Difference from yesterday (for demo, 14% less)
   double get differencePercentage => -14.0;
 
+  static double _sanitizeDouble(dynamic value, {double fallback = 0.0}) {
+    if (value == null) return fallback;
+    final double parsed = (value as num).toDouble();
+    if (!parsed.isFinite || parsed.isNegative) return fallback;
+    return parsed == -0.0 ? 0.0 : parsed;
+  }
+
   // Parse from API JSON response
   factory EnergyReading.fromJson(Map<String, dynamic> json) {
     return EnergyReading(
       timestamp: DateTime.parse(json['timestamp'] as String),
-      power: (json['power'] as num).toDouble(),
-      voltage: (json['voltage'] as num? ?? 240.0).toDouble(),
-      current: (json['current'] as num).toDouble(),
+      power: _sanitizeDouble(json['power']),
+      voltage: _sanitizeDouble(json['voltage'], fallback: 240.0),
+      current: _sanitizeDouble(json['current']),
       predictedAppliance: json['predicted_appliance'] as String? ?? 'Unknown',
       energyScore: json['energy_score'] as int? ?? 75,
       isAnomaly: json['is_anomaly'] as bool? ?? false,
       anomalyInsight: json['anomaly_insight'] as String?,
-      estimatedBill: (json['estimated_bill'] as num?)?.toDouble() ?? 218.40,
+      estimatedBill: _sanitizeDouble(json['estimated_bill'], fallback: 218.40),
     );
   }
 

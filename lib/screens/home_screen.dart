@@ -27,13 +27,14 @@ class _HomeScreenState extends State<HomeScreen>
     WidgetsBinding.instance.addObserver(this);
     _initializeAnimations();
     Future.microtask(() {
-      context.read<EnergyProvider>().fetchLiveUsage();
+      context.read<EnergyProvider>().startAutoRefresh();
     });
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    context.read<EnergyProvider>().stopAutoRefresh();
     _animationController.dispose();
     super.dispose();
   }
@@ -197,7 +198,7 @@ class _HomeScreenState extends State<HomeScreen>
     }
 
     return RefreshIndicator(
-      onRefresh: () => energyProvider.fetchLiveUsage(),
+      onRefresh: () => energyProvider.refreshMockUsage(),
       backgroundColor: AppTheme.bgLight,
       color: AppTheme.primaryBlue,
       child: SlideTransition(
@@ -216,7 +217,7 @@ class _HomeScreenState extends State<HomeScreen>
                 const SizedBox(height: 24),
                 _buildStatsRow(reading),
                 const SizedBox(height: 28),
-                _buildChartSection(context),
+                _buildChartSection(context, energyProvider),
                 const SizedBox(height: 28),
                 if (reading.isAnomaly) ...[
                   _buildAnomalyAlert(reading),
@@ -310,7 +311,7 @@ class _HomeScreenState extends State<HomeScreen>
             ),
             const SizedBox(height: 28),
             _buildGlassButton(
-              onPressed: () => energyProvider.fetchLiveUsage(),
+              onPressed: () => energyProvider.refreshMockUsage(),
               label: 'Try Again',
             ),
           ],
@@ -561,7 +562,7 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
-  Widget _buildChartSection(BuildContext context) {
+  Widget _buildChartSection(BuildContext context, EnergyProvider energyProvider) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -587,15 +588,9 @@ class _HomeScreenState extends State<HomeScreen>
           borderRadius: 24,
           child: Padding(
             padding: const EdgeInsets.all(16),
-            child: LineChartHelper.buildHourlyChart([
-              5.2,
-              6.1,
-              7.8,
-              12.5,
-              18.3,
-              22.1,
-              19.5,
-            ]),
+            child: LineChartHelper.buildHourlyChart(
+              energyProvider.usageTrend,
+            ),
           ),
         ),
       ],

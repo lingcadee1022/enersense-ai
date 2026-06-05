@@ -1,9 +1,19 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 
 class LineChartHelper {
   // Create a line chart for hourly usage trends
   static LineChart buildHourlyChart(List<double> values) {
+    final sanitizedValues = values
+        .map((value) => value.isFinite && value >= 0 ? value : 0.0)
+        .toList();
+    final maxValue = sanitizedValues.isNotEmpty
+        ? sanitizedValues.reduce(max)
+        : 5.0;
+    final yMax = max(12.0, maxValue * 1.3);
+
     return LineChart(
       LineChartData(
         gridData: FlGridData(show: true, drawVerticalLine: true),
@@ -55,9 +65,9 @@ class LineChartHelper {
           ),
         ],
         minX: 0,
-        maxX: 6,
+        maxX: max(6, sanitizedValues.length - 1).toDouble(),
         minY: 0,
-        maxY: 25,
+        maxY: yMax,
       ),
     );
   }

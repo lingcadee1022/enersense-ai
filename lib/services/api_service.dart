@@ -216,14 +216,14 @@ class ApiService {
   EnergyReading _getMockEnergyReading() {
     return EnergyReading(
       timestamp: DateTime.now(),
-      power: 4820.0,
+      power: 4200.0,
       voltage: 240.0,
-      current: 20.08,
+      current: 17.5,
       predictedAppliance: 'Air Conditioner',
-      energyScore: 42,
+      energyScore: 47,
       isAnomaly: false,
       anomalyInsight: null,
-      estimatedBill: 218.40,
+      estimatedBill: 189.00,
     );
   }
 
